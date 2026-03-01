@@ -1,21 +1,24 @@
 const { chromium } = require('playwright');
 
 (async () => {
-  const browser = await chromium.launch();
-  const page = await browser.newPage();
+  const browser = await chromium.launch({ headless: true });
   let total = BigInt(0);
 
-  for (let seed = 4; seed <= 13; seed++) {
-    const url = `https://tools.iitm.ac.in/playwrightjs/table?seed=${seed}`;
-    console.log(`Scraping: ${url}`);
-    await page.goto(url, { waitUntil: 'networkidle', timeout: 60000 });
-    await page.waitForSelector('table', { timeout: 20000 });
+  const urls = [4,5,6,7,8,9,10,11,12,13].map(s =>
+    `https://sanand0.github.io/tdsdata/js_table/?seed=${s}`
+  );
+
+  for (const url of urls) {
+    const page = await browser.newPage();
+    await page.goto(url, { waitUntil: 'networkidle' });
+    await page.waitForSelector('table');
 
     const nums = await page.$$eval('td, th', els =>
       els.map(e => e.innerText.trim()).filter(t => /^-?\d+$/.test(t))
     );
-    console.log(`  seed ${seed}: ${nums.length} numbers`);
+    console.log(`seed ${url.split('=')[1]}: ${nums.length} numbers`);
     for (const n of nums) total += BigInt(n);
+    await page.close();
   }
 
   await browser.close();
